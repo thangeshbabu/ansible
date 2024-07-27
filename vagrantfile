@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANT_BOX="laravel/homestead"
+VAGRANT_BOX_VERSION="13.0.0"
+NUMBER_OF_NODES=2
+
+Vagrant.configure(2) do |config|
+
+  (1..NUMBER_OF_NODES).each do |iterator|
+
+    config.vm.define "ansiblenode#{iterator}" do |node|
+
+      # box  info
+      node.vm.box=VAGRANT_BOX
+      node.vm.box_check_update  = false
+      # node.vm.box_version=VAGRANT_BOX_VERSION
+      node.vm.hostname = "ansiblenode#{iterator}.lan.com"
+      
+      #box networking
+      node.vm.network "private_network", ip: "172.17.17.10#{iterator}"
+
+      #provider config
+      # node.vm.provider "libvirt" do |libvirt|
+      #   libvirt.memory  = 2048
+      #   libvirt.nested  = true
+      #   libvirt.cpus    = 3
+      # end
+      node.vm.provider "virtualbox" do |v|
+        v.memory  = 2048
+        v.cpus    = 3
+        v.gui = false
+      end
+
+      node.vm.provision "shell", path: "./scripts/bootstrap.sh"
+
+    end
+
+  end
+
+end
