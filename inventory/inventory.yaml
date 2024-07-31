@@ -5,6 +5,6 @@ ansible_nodes:
     node2:
       ansible_host: 172.17.17.102
   vars:
-    ansible_user: root
-    ansible_password: "999"
+    ansible_user: vagrant
+    ansible_password: "vagrant"
     

@@ -1,0 +1,68 @@
+---
+- name: neovim builder 
+  hosts: node1
+  vars_files:
+  - ./vars.yaml
+  
+
+  pre_tasks:
+    - name: "ensure the artifacts folder is present"
+      ansible.builtin.file:
+        path: "{{ artifacts_folder }}"
+        state: directory
+
+
+    - name: "install required packages"
+      become: true
+      apt:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - jq
+
+    - name: "gather information about the latest version of neovim"
+      shell: |
+        
+        download_url="$(curl -sL 'https://api.github.com/repos/neovim/neovim/releases/latest' | jq -r '.assets[] | select(.name? | match("nvim-linux64.tar.gz$") ) | .browser_download_url')"
+
+        echo "$download_url"
+
+        echo "$download_url" | sed 's/^.*\/download\/\(.*\)\/nvim.*/\1/'
+
+      register: neovim
+
+    # - debug: msg="download {{ item[0] }} -- {{item[1]}} "
+    #   with_list:
+    #    - "{{ neovim.stdout_lines }}"
+
+    - name: "downlaod latest release tar"
+      register: neovim_release_download
+      ansible.builtin.get_url:
+        url: "{{ item[0] }}"
+        dest: "{{ artifacts_folder }}/neovim-{{item[1]}}.tar.gz"
+      with_list:
+        - "{{ neovim.stdout_lines }}"
+
+    # - debug: msg="{{ neovim_release_download }}"
+
+    - name: "unzip latest release "
+      unarchive: 
+        src: "{{ neovim_release_download.results[0].dest }}"
+        dest: "{{ artifacts_folder}}"
+        remote_src: true
+
+    - name: "copy the neovim binary to /usr/local/bin"
+      become: true
+      copy:
+        src: "{{ artifacts_folder }}/nvim-linux64/bin/nvim"
+        dest: /usr/local/bin/nvim
+        owner: vagrant
+        group: vagrant
+        mode: 0755
+        remote_src: true
+        force: yes
+
+  # tasks: 
+  #   - name: "download latest release "
+      

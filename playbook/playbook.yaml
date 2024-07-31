@@ -1,0 +1,81 @@
+---
+- hosts: node1
+  remote_user: root
+  become: true
+  vars_files:
+  - ./vars.yaml
+
+
+  handlers:
+    - name: "update apt cache"
+      apt:
+        update_cache: true
+
+  pre_tasks:
+    - name: "ensure the artifacts folder is present"
+      ansible.builtin.file:
+        path: "{{ artifacts_folder }}"
+        state: directory
+        
+    - name: "update apt cache"
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: "add official repos"
+      ansible.builtin.apt_repository: 
+        repo: "{{ item.repo }}"
+        state: present
+      loop:
+        - repo: deb mirror://mirrors.ubuntu.com/mirrors.txt jammy main restricted universe multiverse
+        - repo: deb mirror://mirrors.ubuntu.com/mirrors.txt jammy-updates main restricted universe multiverse
+        - repo: deb mirror://mirrors.ubuntu.com/mirrors.txt jammy-backports main restricted universe multiverse
+        - repo: deb mirror://mirrors.ubuntu.com/mirrors.txt jammy-security main restricted universe multiverse
+        - repo: 'ppa:neovim-ppa/unstable'
+      notify: "update apt cache"
+
+    - name: "flush handers"
+      meta: flush_handlers
+
+
+    - name: "Install all the necessary packages"
+      ansible.builtin.package: 
+        name: 
+          - neovim
+          - vim
+          - git
+          - tmux
+          - zsh
+          - dnsutils
+          - ansible
+          - stow
+          - zoxide
+          - syncthing
+          # - k9s
+          # - starship
+          # - lazygit
+        state: present
+
+    - name: "Ensure the Syncthing, Service is Running"
+      become: false
+      ansible.builtin.service:
+        name: 'syncthing.service'
+        enabled: true
+        scope: user
+        state: started
+
+    - name: Git checkout
+      become: false
+      ansible.builtin.git:
+        repo: 'https://{{gh_pat}}@github.com/thangeshbabu/dotfiles.git'
+        dest: '~/.local/dotfiles/'
+        clone: true
+        force: true
+  
+    - name: "Stow the dotfiles"
+      become: false
+      ansible.builtin.shell: "stow -d . -t ~/ ."
+      args:
+        chdir: "~/.local/dotfiles/config.personal/"
+        creates: "~/.config/nvim/init.lua"
