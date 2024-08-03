@@ -1,0 +1,79 @@
+- name: "uninstall below before installing docker"
+  become: true
+  ansible.builtin.package:
+    name:
+      - docker.io
+      - docker-doc
+      - docker-compose
+      - docker-compose-v2
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+  tags: docker
+
+- name: "Install_docker_dependencies"
+  become: true
+  ansible.builtin.package:
+    name:
+      - curl
+      - ca-certificates
+    state: present
+  tags: docker
+
+- name: "Ensure keyring folder"
+  become: true
+  ansible.builtin.file:
+    path: "/etc/apt/keyrings"
+    state: directory
+    mode: "0755"
+  when: ansible_os_family == "Debian"
+  tags: docker
+
+
+- name: "Get docker official GPG key"
+  become: true
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    dest: "/etc/apt/keyrings/docker.asc"
+    mode: '0644'
+    force: true
+  when: ansible_os_family == "Debian"
+  tags: docker
+
+- name: "Add docker official repo"
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: true
+    filename: docker
+  when: ansible_os_family == "Debian"
+  tags: docker
+
+- name: "Install_docker"
+  become: true
+  ansible.builtin.package:
+    name: ["docker-ce"]
+    state: present
+  # when: ansible_os_family == "Debian"
+  tags: docker
+
+- name: "Add User to docker"
+  become: true
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: "docker"
+    append: true
+  tags: docker
+
+- name: "Install podman"
+  become: true
+  ansible.builtin.package:
+    name: ["podman","qemu-system"]
+    state: present
+  when: ansible_os_family == "Debian"
+  tags: podman
+
+# sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+# sudo chmod a+r /etc/apt/keyrings/docker.asc
