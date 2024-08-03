@@ -1,0 +1,8 @@
+---
+- host: all
+  remote_host: root
+
+  roles:
+  -  common
+  
+  

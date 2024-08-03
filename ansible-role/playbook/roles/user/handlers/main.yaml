@@ -1,0 +1,8 @@
+- name: "Restart_sshd"
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+
+- name: "Update_os_repository_cache"
+  ansible.builtin.package:
+    update_cache: true

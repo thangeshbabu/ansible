@@ -1,0 +1,3 @@
+- name: "update_os_repository_cache"
+  apt:
+    update_cache: true

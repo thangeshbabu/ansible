@@ -1,0 +1,21 @@
+# - name: "Clean required files"
+#   ansible.builtin.file:
+#     state: absent
+#     path: "{{ item }}"
+#   loop: "{{ remove_paths }}"
+#   when: remove_paths is defined
+
+- name: Git checkout
+  become: false
+  ansible.builtin.git:
+    repo: "https://{{ git.PAT }}@github.com/thangeshbabu/dotfiles.git"
+    dest: "{{ git.Clone_dest }}"
+    clone: true
+    force: true
+
+- name: "Stow the dotfiles"
+  become: false
+  ansible.builtin.shell: "stow -d . -t {{ stow.target }} ."
+  args:
+    chdir: "{{ stow.source }}"
+    creates: "~/.config/nvim/init.lua"

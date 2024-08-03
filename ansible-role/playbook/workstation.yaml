@@ -1,0 +1,54 @@
+---
+- name: User_creation
+  hosts: all
+  vars:
+      ansible_ssh_user: "root"
+      ansible_ssh_pass: "999"
+  roles:
+      - role: user
+        become: true
+        vars:
+            User_name: "thbabua"
+            User_password: "$6$msKpV8sBLpnComVg$Ur.oZAse5mlAZiU054ir/d3vfrAUdr/GC69EJ8iljGBe621wk88DaLqIP0KRB5u1MYoovu1Oiz59Gg14FEq930"
+
+
+- name: Bootstrapping
+  hosts: all
+  vars:
+      ansible_ssh_user: "thbabua"
+      ansible_ssh_pass: "999"
+      ansible_become_pass: "999"
+
+  roles:
+      - role: common
+        vars:
+            common_ubuntu_distribution_name:
+              - "deb mirror://mirrors.ubuntu.com/mirrors.txt jammy main restricted universe multiverse"
+              - "deb mirror://mirrors.ubuntu.com/mirrors.txt jammy-updates main restricted universe multiverse"
+              - "deb mirror://mirrors.ubuntu.com/mirrors.txt jammy-backports main restricted universe multiverse"
+              - "deb mirror://mirrors.ubuntu.com/mirrors.txt jammy-security main restricted universe multiverse"
+              - 'ppa:neovim-ppa/unstable'
+            # Necessary_packages: null
+            # Extra_packages: null
+
+      - role: dotfiles
+        become: false
+        vars:
+            git:
+              PAT: "{{ gh_pat }}"
+              Clone_dest: '~/.local/dotfiles/'
+            # remove_paths:
+            #   - "~/.zshrc"
+            #   - "~/.config/zsh"
+            #   - "~/.config/nvim"
+            #   - "~/.config/tmux"
+            #   - "~/.tmux.conf"
+            stow:
+              target: "~/"
+              source: "~/.local/dotfiles/config.personal/"
+
+  # handlers:
+  #   -
+  # pre_tasks:
+  #   -
+  # tasks:

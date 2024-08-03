@@ -1,0 +1,37 @@
+
+- name: "Add official repos"
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "{{ item }}"
+    state: present
+    update_cache: false
+  loop: "{{ common_ubuntu_distribution_name }}"
+  register: add_repo_result
+  when: common_ubuntu_distribution_name is defined
+
+- name: "update_os_repository_cache"
+  become: true
+  apt:
+    update_cache: true
+  when: add_repo_result.changed
+
+- name: "Install all the necessary packages"
+  become: true
+  ansible.builtin.package:
+    name: "{{ Necessary_packages | default(['neovim','git','stow','zoxide','tmux','syncthing','dnsutils']) }}"
+    state: present
+
+- name: "Install extra packages"
+  become: true
+  ansible.builtin.package:
+    name: "{{ Extra_packages }}"
+    state: present
+  when: Extra_packages is defined and Necessary_packages is undefined
+
+- name: "ensure the syncthing, service is running"
+  become: false
+  ansible.builtin.service:
+    name: 'syncthing.service'
+    enabled: true
+    state: started
+    scope: user

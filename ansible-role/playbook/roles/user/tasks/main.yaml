@@ -1,0 +1,16 @@
+- name: "Install_Basic_Packages"
+  ansible.builtin.package:
+    update_cache: true
+    name:
+      - "sudo"
+      - "zsh"
+
+- name: change user shell to zsh 
+  become: true
+  user:
+    name: "{{ User_name }}"
+    password: "{{ User_password }}"
+    groups: "sudo"
+    append: true
+    create_home: true
+    shell: /bin/zsh
